@@ -4,11 +4,18 @@
 library(RColorBrewer)
 library(scales)
 library(fpp3)
+ # dependencies of fpp3
+library(tidyr); library(dplyr); library(tsibble)
+library(lubridate)
+
 library(forecast)
+
+source("aux_functions.R")
 
 # --------------------------------------------------------------------------- #
 # --------------------------------- Figure 1 -------------------------------- #
 # --------------------------------------------------------------------------- #
+# jonashaslbeck@protonmail.com
 
 # Examples of different (non-) stationary processes; 2x2
 
@@ -123,6 +130,8 @@ dev.off()
 # --------------------------------------------------------------------------- #
 # --------------------------------- Figure 2 -------------------------------- #
 # --------------------------------------------------------------------------- #
+# jonashaslbeck@protonmail.com
+
 
 # Consequences of violating stationarity on cumulative mean; 1x3
 
@@ -147,75 +156,54 @@ pdf("figures/Figure2_nonConv.pdf", width = 7*sc, height=2.7*sc)
 
 par(mfrow=c(1,3), mar=c(4,3.5,3,0.5))
 
+lwd.data <- 1.3
+alpha.data <-  0.75
+lwd.cm <- 2
+line.xlab <- 2.6
+line.main <- 1.5
+
 # ------ 1) No Trend -----
 plot.new()
 plot.window(xlim=c(1,N), ylim=c(-4,4))
 axis(1)
 axis(2, las=2)
-lines(X1, col="black")
-lines(cumm_X1, col="tomato", lwd=2)
-title("(a) Weak Stationarity Satisfied", font.main=1)
-title(xlab="Time", line=2.2)
-text(800, 3, "Cumulative Mean", col="tomato")
+lines(X1, col=alpha("black", alpha=alpha.data), lwd=lwd.data)
+lines(cumm_X1, col="tomato", lwd=lwd.cm)
+title("(a) Weak Stationarity Satisfied", font.main=1, line=line.main)
+title(xlab="Time", line=line.xlab)
+text(700, 3.5, "Cumulative Mean", col="tomato", cex=1.3)
 
 # ------ 2) Stochastic Trend -----
 plot.new()
 plot.window(xlim=c(1,N), ylim=c(-20,60))
 axis(1)
 axis(2, las=2)
-lines(X2, col="black")
-lines(cumm_X2, col="tomato", lwd=2)
-title("(b) Variance Depends on Time", font.main=1)
-title(xlab="Time", line=2.2)
+lines(X2, col=alpha("black", alpha=alpha.data), lwd=lwd.data)
+lines(cumm_X2, col="tomato", lwd=lwd.cm)
+title("(b) Variance Depends on Time", font.main=1, line=line.main)
+title(xlab="Time", line=line.xlab)
 
 # ------ 3) Deterministic Trend -----
 plot.new()
 plot.window(xlim=c(1,N), ylim=c(0,20))
 axis(1)
 axis(2, las=2)
-lines(X3, col="black")
-lines(cumm_X3, col="tomato", lwd=2)
-title("(c) Mean depends on Time", font.main=1)
-title(xlab="Time", line=2.2)
+lines(X3, col=alpha("black", alpha=alpha.data), lwd=lwd.data)
+lines(cumm_X3, col="tomato", lwd=lwd.cm)
+title("(c) Mean depends on Time", font.main=1, line=line.main)
+title(xlab="Time", line=line.xlab)
 
 dev.off()
+
 
 # --------------------------------------------------------------------------- #
 # --------------------------------- Figure 3 -------------------------------- #
 # --------------------------------------------------------------------------- #
+# jonashaslbeck@protonmail.com
 
-# Sampling Distribution of phi; no trend, det trend, stoch trend
+# Load output from "analysis_biases.R"
 
-# Storage
-nIter <- 10000
-m_phi <- matrix(NA, nIter, 3)
-N <- 100
-
-set.seed(1)
-
-# generate different conditions, estimate AR(1)
-for(k in 1:nIter) {
-  
-  # ------ 1) No Trend -----
-  X1 <- genAR(n=N, phi = .5, init = rnorm(1,0,sqrt(2)), noise = 1)
-  # recover
-  out <- lm(X1[-1] ~ X1[-N])
-  m_phi[k,1] <- out$coefficients[2]
-  
-  # ------ 2) Stochastic Trend -----
-  X2 <- genAR(n=N, phi = 1, init = 0, noise = 1.5)
-  # recover
-  out <- lm(X2[-1] ~ X2[-N])
-  m_phi[k,2] <- out$coefficients[2]
-  
-  # ------ 3) Deterministic Trend -----
-  X3 <- genAR(n = N, phi = .5, init = 0, ltrend = .1, noise = 1)
-  out <- lm(X3[-1] ~ X3[-N])
-  m_phi[k,3] <- out$coefficients[2]
-  
-  print(k)
-} # end for
-
+m_phi <- readRDS(file = "files/bias_results.RDS")
 
 # ---------- Plotting -------------------------------
 
@@ -223,7 +211,8 @@ sc <- 1.1
 pdf("figures/Figure3_hists_bias.pdf", width = 7*sc, height=2.7*sc)
 
 n_breaks <- 50
-cex.axis <- 0.9
+cex.axis <- 1
+line.main <- 1.5
 
 par(mfrow=c(1,3), mar=c(4,3.5,3,0.5))
 # No trend
@@ -233,7 +222,7 @@ axis(1, cex.axis=cex.axis)
 axis(2, las=2)
 abline(v=0.5, lwd=1.5, col="orange")
 abline(v=mean(m_phi[, 1]), lwd=1.5, lty=2, col="black")
-title("(a) Weak Stationarity Satisfied", font.main=1)
+title("(a) Weak Stationarity Satisfied", font.main=1, line=line.main)
 title(xlab=expression(hat(phi)))
 title(ylab="Density", line=2.2)
 
@@ -252,7 +241,7 @@ axis(1, cex.axis=cex.axis)
 axis(2, las=2)
 abline(v=1, lwd=1.5, col="orange")
 abline(v=mean(m_phi[, 2]), lwd=1.5, lty=2, col="black")
-title("(b) Variance Depends on Time", font.main=1)
+title("(b) Variance Depends on Time", font.main=1, line=line.main)
 title(xlab=expression(hat(phi)))
 
 # Det trend
@@ -261,96 +250,20 @@ hist(m_phi[, 3], breaks=seq(0.4, 1.1, length=n_breaks), freq = FALSE,
 axis(1, seq(0.4, 1.1, length=8), cex.axis=cex.axis)
 axis(2, las=2)
 abline(v=0.5, lwd=1.5, col="orange")
-abline(v=mean(m_phi[, 3]), lwd=1.5, lty=2, col="black")
+abline(v=mean(m_phi[, 3]), lwd=1.5, lty=2, col="black", line=line.main)
 title("(c) Mean depends on Time", font.main=1)
 title(xlab=expression(hat(phi)))
 
 dev.off()
 
+
 # --------------------------------------------------------------------------- #
 # --------------------------------- Figure 4 -------------------------------- #
 # --------------------------------------------------------------------------- #
+# jonashaslbeck@protonmail.com
 
-# Detrending vs Differencing; sampling distribution of phi (2x2)
-
-# ---------------------------- Generating Data ----------------------------
-
-# Storage
-nIter <- 10000
-m_phi_r <- matrix(NA, nIter, 2) # residualized (detrend)
-m_phi_d <- matrix(NA, nIter, 2) # differenced
-m_phi_d2 <- matrix(NA, nIter, 2) # differenced (alternative)
-m_phi_a <- matrix(NA, nIter, 2) # differenced (alternative)
-
-N <- 100
-
-set.seed(1)
-
-for(k in 1:nIter) {
-  
-  # ------ 1) Deterministic Trend & de-trend -----
-  x1 <- genAR(n = N, phi = .5, init = 0, ltrend = .1, noise = 1)
-  # detrend
-  x1r <- detrend(x1)
-  # fit model to residuals
-  out <- lm(x1r[-1] ~ x1r[-N])
-  m_phi_r[k,1] <- out$coefficients[2]
-  
-  # ------ 2) Stochastic Trend with drift & detrend -----
-  x2 <- genAR(c = 0.75, n=N, phi = 1, init = 0, noise = 1.5)
-  # detrend
-  x2r <- detrend(x2)
-  # fit model to residuals
-  out <- lm(x2r[-1] ~ x2r[-N])
-  m_phi_r[k,2] <- out$coefficients[2]
-  
-  # ------ 3) Deterministic Trend & difference -----
-  # difference
-  x1d <- diff(x1)
-  # fit model to residuals
-  # out <- lm(x1d[-1] ~ 0 + x1d[-(N-1)])
-  # m_phi_d[k,1] <- out$coefficients[1]
-  out <- lm(x1d[-1] ~ x1d[-(N-1)])
-  m_phi_d[k,1] <- out$coefficients[2]
-  
-  # ------ 2) Stochastic Trend with drift & difference -----
-  # difference
-  x2d <- diff(x2)
-  # fit model to residuals
-  # out <- lm(x2d[-1] ~ 0 + x2d[-(N-1)])
-  # m_phi_d[k,2] <- out$coefficients[1]
-  out <- lm(x2d[-1] ~ x2d[-(N-1)])
-  m_phi_d[k,2] <- out$coefficients[2]
-  
-  # ------------------------------------------------------------------------
-  # ----- Alternative differencing - only outcome variable -----------------
-  # ------------------------------------------------------------------------
-  
-  # ------  Deterministic Trend & difference 2  -----
-  # difference
-  out <- lm(x1d ~ x1[-N])
-  m_phi_d2[k,1] <- out$coefficients[2]
-  
-  # ------ Stochastic Trend with drift & difference 2-----
-  out <- lm(x2d ~ x2[-N])
-  m_phi_d2[k,2] <- out$coefficients[2]
-  
-  # ------------------------------------------------------------------------
-  # ---------------- Arima model function differencing ---------------------
-  # ------------------------------------------------------------------------
-  # ------  Deterministic Trend & difference 2  -----
-  # difference
-  out <- forecast::Arima(x1, order = c(1,1,0), include.drift = TRUE)
-  m_phi_a[k,1] <- out$coef[1]
-  
-  # ------ Stochastic Trend with drift & difference 2-----
-  out <-  forecast::Arima(x2, order = c(1,1,0), include.drift = TRUE)
-  m_phi_a[k,2] <- out$coef[1]
-  
-  
-  print(k)
-} # end for
-
+# Load results from "analysis_detdiff.R"
+results_detdiff <- readRDS(file = "files/detdiff_results.RDS")
 
 # --------------------------------- Plotting -----------------------------
 
@@ -358,7 +271,6 @@ for(k in 1:nIter) {
 alpha <- 0.2
 sc <- 0.9
 pdf("figures/Figure4_detrend_bias.pdf", width = 7*sc, height=6.5*sc)
-
 
 # Make Layout
 lmat <- rbind(c(0, 1, 2),
@@ -387,15 +299,14 @@ par(mar=c(4,3.5,.5,0.5))
 # Deterministic Trend, De-trend
 plot.new()
 plot.window(xlim=c(0,1), ylim=c(0, 6))
-rect(0, 0, 1, 6, col=alpha("darkgreen", alpha=alpha), border=FALSE)
-hist(m_phi_r[, 1], breaks=seq(0, 1, length=n_breaks), freq = FALSE,
+# rect(0, 0, 1, 6, col=alpha("darkgreen", alpha=alpha), border=FALSE)
+hist(results_detdiff$m_phi_r[, 1], breaks=seq(0, 1, length=n_breaks), freq = FALSE,
      axes=FALSE, xlab="", main="", ylim=c(0,6), ylab="", add=TRUE)
 
 axis(1, cex.axis=cex.axis)
 axis(2, las=2)
 abline(v=0.5, lwd=1.5, col="orange")
-abline(v=mean(m_phi_r[, 1]), lwd=1.5, lty=2, col="black")
-# title("(a) Deterministic Trend, De-trended", font.main=1)
+abline(v=mean(results_detdiff$m_phi_r[, 1]), lwd=1.5, lty=2, col="black")
 title(xlab=expression(hat(phi)))
 title(ylab="Density", line=2.2)
 
@@ -410,50 +321,46 @@ legend(.65, 6, legend=legend,
 # Stochastic Trend, de-trend
 plot.new()
 plot.window(xlim=c(.5,1.1), ylim=c(0, 10))
-rect(0, 0, 1.1, 10, col=alpha("red", alpha=alpha), border=FALSE)
-hist(m_phi_r[, 2],breaks=seq(0.5, 1.1, length=n_breaks), freq = FALSE,
+# rect(0, 0, 1.1, 10, col=alpha("red", alpha=alpha), border=FALSE)
+hist(results_detdiff$m_phi_r[, 2],breaks=seq(0.5, 1.1, length=n_breaks), freq = FALSE,
      axes=FALSE, xlab="", main="", ylim=c(0,10), ylab="", add=TRUE)
 axis(1, cex.axis=cex.axis)
 axis(2, las=2)
 abline(v=1, lwd=1.5, col="orange")
-abline(v=mean(m_phi_r[, 2]), lwd=1.5, lty=2, col="black")
-# title("(b) Stochastic Trend, De-trended", font.main=1)
+abline(v=mean(results_detdiff$m_phi_r[, 2]), lwd=1.5, lty=2, col="black")
 title(xlab=expression(hat(phi)))
 
 
 # Deterministic Trend, Differenced
 plot.new()
 plot.window(xlim=c(.4,1.2), ylim=c(0, 6))
-rect(0, 0, 1.2, 6, col=alpha("red", alpha=alpha), border=FALSE)
-hist(m_phi_d[, 1] + 1, breaks=seq(0.4, 1.2, length=n_breaks), freq = FALSE,
+# rect(0, 0, 1.2, 6, col=alpha("red", alpha=alpha), border=FALSE)
+hist(results_detdiff$m_phi_d[, 1] + 1, breaks=seq(0.4, 1.2, length=n_breaks), freq = FALSE,
      axes=FALSE, xlab="", main="", ylim=c(0,6), ylab="", add=TRUE)
 axis(1, cex.axis=cex.axis)
 axis(2, las=2)
 abline(v=0.5, lwd=1.5, col="orange")
-abline(v=mean(m_phi_d[, 1]+1), lwd=1.5, lty=2, col="black")
-# title("(c) Deterministic Trend, Differenced", font.main=1)
+abline(v=mean(results_detdiff$m_phi_d[, 1]+1), lwd=1.5, lty=2, col="black")
 title(xlab=expression(hat(phi) + 1))
 title(ylab="Density", line=2.2)
 
 
 # Stochastic Trend, Differenced
-# hist(m_phi_d[, 2]+1,breaks=seq(0.6, 1.4, length=n_breaks), freq = FALSE,
-#      axes=FALSE, xlab="", main="", ylim=c(0,6), ylab="")
 plot.new()
 plot.window(xlim=c(.6,1.4), ylim=c(0, 6))
-rect(0, 0, 1.4, 6, col=alpha("darkgreen", alpha=alpha), border=FALSE)
-hist(m_phi_d[, 2]+1,breaks=seq(0.6, 1.4, length=n_breaks), freq = FALSE,
+# rect(0, 0, 1.4, 6, col=alpha("darkgreen", alpha=alpha), border=FALSE)
+hist(results_detdiff$m_phi_d[, 2]+1,breaks=seq(0.6, 1.4, length=n_breaks), freq = FALSE,
      axes=FALSE, xlab="", main="", ylim=c(0,6), ylab="", add=TRUE)
 axis(1, cex.axis=cex.axis)
 axis(2, las=2)
 abline(v=1, lwd=1.5, col="orange")
-abline(v=mean(m_phi_d[, 2]+1), lwd=1.5, lty=2, col="black")
-# title("(d) Stochastic Trend, Differenced", font.main=1)
+abline(v=mean(results_detdiff$m_phi_d[, 2]+1), lwd=1.5, lty=2, col="black")
 title(xlab=expression(hat(phi) + 1))
 title(ylab="Density", line=2.2)
 
-
 dev.off()
+
+
 
 # --------------------------------------------------------------------------- #
 # --------------------------------- Figure 6 -------------------------------- #
@@ -469,53 +376,57 @@ cols <- brewer.pal(5, "Dark2")
 sc <- 4.25
 
 # Create main panels
- pdf("figures/Figure6_URsim.pdf", height = (1)*sc, width = 2*sc)
- par(mfrow=c(1,2))
- 
+pdf("figures/Figure6_URsim_plus_leg.pdf", height = (1.1)*sc, width = 2*sc)
+
+lmat <- rbind(c(1,2), c(3,3))
+lo <- layout(mat = lmat, heights = c(1, .2), widths = c(1,1))
+
+lwd.data <- 1.8
+
+# Data
+par(mar=c(4, 4.2, 3, 2))
 plot.new()
 plot.window(xlim = c(0,500), ylim = c(0,1))
 axis(1); axis(2, las = 2)
-title("(a) ADF Model Known", font.main = 1)
+title("(a) ADF Model Known", font.main = 1, line=1.5)
 title(xlab = "# Time Points", line = 2.5)
 title(ylab = "Proportion Correct", line = 2.5)
 for(i in 1:5){
   if(i == 4) jit <- 5; if(i == 5) jit <- -5 else jit <- 0
-  lines(x = tpoints_vec +jit, y = simres[[i]][,1], col = alpha(cols[i],.75), type = "b", pch = 21, cex = 1.5)
-  points(x = tpoints_vec + jit, y = simres[[i]][,1], bg = alpha(cols[i],.75), pch = 21, cex = 1.5)
+  lines(x = tpoints_vec +jit, y = simres[[i]][,1], col = alpha(cols[i],.75), type = "l", pch = 21, lwd = lwd.data)
+  # points(x = tpoints_vec + jit, y = simres[[i]][,1], bg = alpha(cols[i],.75), pch = 21, cex = 1.5)
 }
 abline(h = .95, col = "grey", lty = 2)
 
-  # 2nd panel; with model selection
+# 2nd panel; with model selection
 plot.new()
 plot.window(xlim = c(0,500), ylim = c(0,1))
 axis(1); axis(2, las = 2)
-title("(b) ADF Model Selection", font.main = 1)
+title("(b) ADF Model Selection", font.main = 1, line=1.5)
 title(xlab = "# Time Points", line = 2.5)
 title(ylab = "Proportion Correct", line = 2.5)
 for(i in 1:5){
-  lines(x = tpoints_vec, y = simres[[i]][,2], col = alpha(cols[i],.75), type = "b", pch = 21, cex = 1.5)
-  points(x = tpoints_vec, y = simres[[i]][,2], bg = alpha(cols[i],.75), pch = 21, cex = 1.5)
+  lines(x = tpoints_vec, y = simres[[i]][,2], col = alpha(cols[i],.75), type = "l", pch = 21, lwd = lwd.data)
+  # points(x = tpoints_vec, y = simres[[i]][,2], bg = alpha(cols[i],.75), pch = 21, cex = 1.5)
 }
 abline(h = .95, col = "grey", lty = 2)
+
+# Legend
+par(mar=c(0, 4, 0, 2))
+plot.new()
+legend("center", xpd = "n", bty = "n",
+       legend = c("Stationary\nAR(1)",
+                  "Deterministic\nLinear Trend",
+                  "Random Walk",
+                  "Random Walk\nWith Drift",
+                  "Random Walk\nLinear Trend"),
+       pt.bg = cols, ncol = 5, lwd = lwd.data, col = cols, border = "black",
+       # pch = 21,
+       lty = 1,
+       text.width = .17)
+
 dev.off()
 
-
-# plot legend seperately, add in illustrator
- pdf("figures/Figure6_URsim_leg.pdf", height = (1)*sc, width = 2*sc)
- par(mfrow=c(1,1))
- plot.new()
- legend("center", xpd = "n", bty = "n",
-        legend = c("Stationary\nAR(1)",
-                                  "Deterministic\nLinear Trend",
-                                  "Random Walk",
-                                  "Random Walk\nWith Drift",
-                                  "Random Walk\nLinear Trend"),
-        pt.bg = cols, ncol = 5, pt.cex = 1.5, col = cols, border = "black",
-        pch = 21,
-        lty = 1,
-        text.width = .17)
- dev.off()
- 
 # # pdf("../ursim_unknown_lowalpha.pdf", height = 7, width = 9)
 # plot.new()
 # plot.window(xlim = c(0,500), ylim = c(0,1))
@@ -540,146 +451,286 @@ dev.off()
 # ---- Generate time series -----
 
 # Generate trend
- time <- 0:20
- trend <- 120 -2*time
- 
+time <- 0:20
+trend <- 120 -2*time
+
 # add noise (here, pre-specified for illustrative purposes)
- noise <- c(-10, -9.5, -9.2, -5.16, -2.45, 1.59, 3.77, 6.45, 6.4, 8.1, 5.6,
-            5.7, 5.9, 4.5, 1.7, -2.5, -1, -4, -2, -2, -1)
- x <- trend + noise
+noise <- c(-10, -9.5, -9.2, -5.16, -2.45, 1.59, 3.77, 6.45, 6.4, 8.1, 5.6,
+           5.7, 5.9, 4.5, 1.7, -2.5, -1, -4, -2, -2, -1)
+x <- trend + noise
 
 # ---- Determinstic Trend model ----
- fit_growth <- lm(x ~ time)
+fit_growth <- lm(x ~ time)
 
- # Forecast future values form this model
- newdata <- data.frame(
-   time = seq(0:30)
- )
- predg <- predict(
-   object = fit_growth,
-   newdata = newdata,
-   interval = "prediction"
- )
- 
- # --- Stochastic Trend Model ----
+# Forecast future values form this model
+newdata <- data.frame(
+  time = seq(0:30)
+)
+predg <- predict(
+  object = fit_growth,
+  newdata = newdata,
+  interval = "prediction"
+)
+
+# --- Stochastic Trend Model ----
 # get data into format for fpp3 package
- dat <- data.frame(x = c(x, rep(NA, 10)), time = c(0:30),
-                   prepost = c(rep("pre", length(x)),
-                               rep("post", length(21:30)))
- )
- dat_ts <- as_tsibble(dat, index = time)
- 
- # fit ARIMA model with fpp3, allow it to select best model using defaults
- fit_arima <- dat_ts  |>
-   filter(prepost == "pre") |> model(timeseries = ARIMA(x))
- # best fitting model is random walk with drift
- 
- # Generate forecasts
- fcasts <- fit_arima |> forecast(new_data = dat_ts |> filter(prepost == "post"))
- fcasts
- 
- # manually extract forecast distribution from fcasts object
- dist_man <- rbind(c(77.5,5.3),
-                   c(75.9, 11),
-                   c(74.4, 16),
-                   c(72.8,21),
-                   c(71.3,27),
-                   c(69.7,32),
-                   c(68.2,37),
-                   c(66.6,43),
-                   c(65.1,48),
-                   c(63.5,53))
- 
- # mean of forecast distribution is the point forecast
- meansw <- dist_man[,1]
- # get 2.5 and 97.5 percent quantiles of forecast distributions
- quants <- apply(dist_man, 1,
-                 function(row) qnorm(c(.025,.975), row[1], row[2]))
- 
- sc <- 1.1
- pdf("figures/Figure7_forecast.pdf", width = 7*sc, height=3.5*sc)
- par(mfrow = c(1,2))
- # plot deterministic 
- plot.new()
- plot.window(xlim=c(0,30), ylim=c(-50,200))
- axis(1)
- axis(2, las=2, at = c(-50, 0, 50, 100, 150,200))
- title("(a) Deterministic Trend", font.main=1)
- title(xlab="Time", line=2.2)
- 
- # prediciton intervals as shaded regions
- lines(x = 20:30, y = predg[21:31,"fit"], col="tomato", lwd=2)
- lines(x = 20:30, y = c(x[21],predg[22:31,"lwr"]), col = "tomato",
-       lty = 2, lwd = 2)
- yl <- c(x[21],predg[22:31,"lwr"])
- yu <- c(x[21],predg[22:31,"upr"])
- lines(x = 20:30, y = c(x[21],predg[22:31,"upr"]), col = "tomato",
-       lty = 2, lwd = 2)
- polygon(x = c(20:30, rev(20:30)),
-         y = c(yu, rev(yl)),
-         col = alpha("tomato", .5), lty = 0
- )
- lines(x = 0:20, y = x, col="black", lwd = 2)
- 
- # plot random walk with drift 
- plot.new()
- plot.window(xlim=c(0,30), ylim=c(-50,200))
- axis(1)
- axis(2, las=2, at  = c(-50, 0, 50, 100, 150, 200))
- 
- lines(x = 20:30, y = c(x[20],meansw),
-       col="tomato", lwd=2)
- yl <- c(x[21], quants[1,])
- yu <- c(x[21], quants[2,])
- lines(x = 20:30, y = yl, col = "tomato",
-       lty = 2, lwd = 2)
- lines(x = 20:30, y = yu, col = "tomato",
-       lty = 2, lwd = 2)
- 
- polygon(x = c(20:30, rev(20:30)),
-         y = c(yu, rev(yl)),
-         col = alpha("tomato", .5), lty = 0
- )
- 
- lines(x = 0:20, y = x, col="black", lwd = 2)
- title("(b) Stochastic Trend", font.main=1)
- title(xlab="Time", line=2.2)
- 
- dev.off()
+dat <- data.frame(x = c(x, rep(NA, 10)), time = c(0:30),
+                  prepost = c(rep("pre", length(x)),
+                              rep("post", length(21:30)))
+)
+dat_ts <- as_tsibble(dat, index = time)
 
- # --------------------------------------------------------------------------- #
- # --------------------------------- Figure 8 -------------------------------- #
- # --------------------------------------------------------------------------- #
- # Fixed autoregressive effects in multilevel setting
- 
- # load simualtion results; `analysis_mlar.R`
- ests <- readRDS("files/simresults_mldetrend.RDS")
- mphi <- 0.3 # true mean phi parameter used in data generation
- 
- estlong <- data.frame(estimates = c(ests[,"raw"], ests[,"center_pp"], 
-                                     ests[,"detrend_m"], ests[,"detrend_pp"]),
-                       method = c(rep("raw", iter), rep("center_pp", iter),
-                                  rep("detrend_m", iter), rep("detrend_pp", iter))
- )
- 
- estlong$method <- factor(estlong$method ,
-                          levels=c("raw","center_pp", "detrend_m", 
-                                   "detrend_pp"))
- pdf("figures/Figure8_mldetrend.pdf", 12, 7)
- boxplot(estimates ~ method, data = estlong,
-         names = c("Raw", "Within-Unit Mean Centered",
-                   "Detrended with Mean Trend",
-                   "Detrended Per Unit"),
-         frame = FALSE,
-         xlab = "Data Pre-Processing",
-         ylab = "Autoregressive Fixed Effect Estimate")
- abline(h = mphi, lty = 2, col = "gray")
- dev.off()
- 
- # --------------------------------------------------------------------------- #
- # --------------------------------- Figure 9 -------------------------------- #
- # --------------------------------------------------------------------------- #
- # TVVAR
- 
- 
- 
+# fit ARIMA model with fpp3, allow it to select best model using defaults
+fit_arima <- dat_ts  |>
+  filter(prepost == "pre") |> model(timeseries = ARIMA(x))
+# best fitting model is random walk with drift
+
+# Generate forecasts
+fcasts <- fit_arima |> forecast(new_data = dat_ts |> filter(prepost == "post"))
+fcasts
+
+# manually extract forecast distribution from fcasts object
+dist_man <- rbind(c(77.5,5.3),
+                  c(75.9, 11),
+                  c(74.4, 16),
+                  c(72.8,21),
+                  c(71.3,27),
+                  c(69.7,32),
+                  c(68.2,37),
+                  c(66.6,43),
+                  c(65.1,48),
+                  c(63.5,53))
+
+# mean of forecast distribution is the point forecast
+meansw <- dist_man[,1]
+# get 2.5 and 97.5 percent quantiles of forecast distributions
+quants <- apply(dist_man, 1,
+                function(row) qnorm(c(.025,.975), row[1], row[2]))
+
+sc <- 1.1
+pdf("figures/Figure7_forecast.pdf", width = 7*sc, height=3.5*sc)
+par(mfrow = c(1,2))
+# plot deterministic 
+plot.new()
+plot.window(xlim=c(0,30), ylim=c(-50,200))
+axis(1)
+axis(2, las=2, at = c(-50, 0, 50, 100, 150,200))
+title("(a) Deterministic Trend", font.main=1)
+title(xlab="Time", line=2.2)
+
+# prediciton intervals as shaded regions
+lines(x = 20:30, y = predg[21:31,"fit"], col="tomato", lwd=2)
+lines(x = 20:30, y = c(x[21],predg[22:31,"lwr"]), col = "tomato",
+      lty = 2, lwd = 2)
+yl <- c(x[21],predg[22:31,"lwr"])
+yu <- c(x[21],predg[22:31,"upr"])
+lines(x = 20:30, y = c(x[21],predg[22:31,"upr"]), col = "tomato",
+      lty = 2, lwd = 2)
+polygon(x = c(20:30, rev(20:30)),
+        y = c(yu, rev(yl)),
+        col = alpha("tomato", .5), lty = 0
+)
+lines(x = 0:20, y = x, col="black", lwd = 2)
+
+# plot random walk with drift 
+plot.new()
+plot.window(xlim=c(0,30), ylim=c(-50,200))
+axis(1)
+axis(2, las=2, at  = c(-50, 0, 50, 100, 150, 200))
+
+lines(x = 20:30, y = c(x[20],meansw),
+      col="tomato", lwd=2)
+yl <- c(x[21], quants[1,])
+yu <- c(x[21], quants[2,])
+lines(x = 20:30, y = yl, col = "tomato",
+      lty = 2, lwd = 2)
+lines(x = 20:30, y = yu, col = "tomato",
+      lty = 2, lwd = 2)
+
+polygon(x = c(20:30, rev(20:30)),
+        y = c(yu, rev(yl)),
+        col = alpha("tomato", .5), lty = 0
+)
+
+lines(x = 0:20, y = x, col="black", lwd = 2)
+title("(b) Stochastic Trend", font.main=1)
+title(xlab="Time", line=2.2)
+
+dev.off()
+
+# --------------------------------------------------------------------------- #
+# --------------------------------- Figure 8 -------------------------------- #
+# --------------------------------------------------------------------------- #
+# Fixed autoregressive effects in multilevel setting
+
+# load simualtion results; `analysis_mlar.R`
+ests <- readRDS("files/simresults_mldetrend.RDS")
+iter <- nrow(ests)
+mphi <- 0.3 # true mean phi parameter used in data generation
+
+estlong <- data.frame(estimates = c(ests[,"raw"], ests[,"center_pp"], 
+                                    ests[,"detrend_m"], ests[,"detrend_pp"]),
+                      method = c(rep("raw", iter), rep("center_pp", iter),
+                                 rep("detrend_m", iter), rep("detrend_pp", iter))
+)
+
+estlong$method <- factor(estlong$method ,
+                         levels=c("raw","center_pp", "detrend_m", 
+                                  "detrend_pp"))
+pdf("figures/Figure8_mldetrend.pdf", 12, 7)
+boxplot(estimates ~ method, data = estlong,
+        names = c("Raw", "Within-Unit Mean Centered",
+                  "Detrended with Mean Trend",
+                  "Detrended Per Unit"),
+        frame = FALSE,
+        xlab = "Data Pre-Processing",
+        ylab = "Autoregressive Fixed Effect Estimate")
+abline(h = mphi, lty = 2, col = "gray")
+dev.off()
+
+# --------------------------------------------------------------------------- #
+# --------------------------------- Figure 9 -------------------------------- #
+# --------------------------------------------------------------------------- #
+# TVVAR; jonashaslbeck@protonmail.com
+
+# Load results
+l_tvvar <- readRDS(file="files/tvvar_results.RDs")
+
+N <- 1000
+
+sc <- 1.1
+pdf("figures/Figure9_TVVAR.pdf", width = 12*sc, height=10*sc)
+
+# ---- Setup Layout ----
+m1 <- matrix(1:20, ncol=5, byrow = TRUE)
+m2 <- cbind(c(21:24), m1)
+m3 <- rbind(c(25:30), m2)
+lo <- layout(mat = m3, widths = c(.2, 1, 1, 1, 1, 1), heights = c(.2, 1, 1, 1, 1))
+# layout.show(lo)
+
+# Define ylims for data
+m_ylim <- rbind(c(-4, 4),
+                c(-35,35),
+                c(0, 200),
+                c(0, 750))
+
+# Define ylims for parameters (kernel)
+m_ylim_phi <- rbind(c(0.35, 0.65),
+                    c(0.95, 1),
+                    c(0.95, 1.05),
+                    c(0.95, 1.05))
+v_phi_correct <- c(.5, 1, .5, 1)
+
+m_ylim_ints <- rbind(c(-.1, .1),
+                     c(-.1, .1),
+                     c(-.1, .1),
+                     c(-.1, .1))
+v_ints_correct <- c(0, 0, 0, 0.75)
+
+N_est <- 50
+
+#  Define ylims for parameters (GAM)
+m_ylim_phi_GAM <- rbind(c(0.35, 0.65),
+                        c(0.90, 1),
+                        c(0.4, .5),
+                        c(.9, 1))
+m_ylim_ints_GAM <- rbind(c(-.1, .1),
+                         c(-2, 2),
+                         c(0, 120),
+                         c(0, 60))
+
+# ----Loop trough 4 cases ----
+
+par(mar=c(4, 4, 1, 1))
+line <- 3
+cex.tit <- 1.3
+
+for(i in 1:4) {
+  
+  # Data
+  plot.new()
+  plot.window(xlim=c(1, N), ylim=m_ylim[i, ])
+  axis(1)
+  axis(2, las=2)
+  title(xlab="Time", ylab="X", line=line)
+  lines(l_tvvar$data[[i]][,1])
+  
+  # --- Kernel (mgm) ---
+  # Phi Parameter (mgm)
+  plot.new()
+  plot.window(xlim=c(0, N_est), ylim=m_ylim_phi[i, ])
+  x_ticks <- seq(0, N, length=6)
+  axis(1, labels=x_ticks, at=x_ticks/20)
+  axis(2, las=2)
+  title(xlab="Time", ylab="Estimate", line=line)
+  lines(l_tvvar$l_AR[[i]])
+  abline(h=v_phi_correct[i], lty=2)
+  
+  # Intercept (mgm)
+  plot.new()
+  plot.window(xlim=c(1, N_est), ylim=m_ylim_ints[i, ])
+  x_ticks <- seq(0, N, length=6)
+  axis(1, labels=x_ticks, at=x_ticks/20)
+  axis(2, las=2)
+  title(xlab="Time", ylab="Estimate", line=line)
+  lines(l_tvvar$l_ints[[i]])
+  abline(h=v_ints_correct[i], lty=2)
+  
+  # --- GAM (tvvarGAM) ---
+  # Phi Parameter (tvvarGam)
+  plot.new()
+  plot.window(xlim=c(0, N_est), ylim=m_ylim_phi_GAM[i, ])
+  x_ticks <- seq(0, N, length=6)
+  axis(1, labels=x_ticks, at=x_ticks/20)
+  axis(2, las=2)
+  title(xlab="Time", ylab="Estimate", line=line)
+  lines(l_tvvar$l_AR_gam[[i]], col="orange")
+  abline(h=v_phi_correct[i], lty=2)
+  
+  # Intercept (tvvarGam)
+  plot.new()
+  plot.window(xlim=c(1, N_est), ylim=m_ylim_ints_GAM[i, ])
+  x_ticks <- seq(0, N, length=6)
+  axis(1, labels=x_ticks, at=x_ticks/20)
+  axis(2, las=2)
+  title(xlab="Time", ylab="Estimate", line=line)
+  lines(l_tvvar$l_ints_gam[[i]], col="orange")
+  abline(h=v_ints_correct[i], lty=2)
+  
+} # end for: 4 cases
+
+
+# ---- Plot row&column labels ----
+
+cex.main <- 1.8
+
+# Row labels
+plotLabel("Stationary", srt=90, cex=cex.main)
+plotLabel("Random Walk", srt=90, cex=cex.main)
+plotLabel("Det. Trend", srt=90, cex=cex.main)
+plotLabel("Random Walk + Drift", srt=90, cex=cex.main)
+
+# Col labels
+plotLabel("", srt=0)
+plotLabel("Data", srt=0, cex=cex.main)
+plotLabel("Phi (kernel)", srt=0, cex=cex.main)
+plotLabel("Intercept (kernel)", srt=0, cex=cex.main)
+plotLabel("Phi (GAM)", srt=0, col="orange", cex=cex.main)
+plotLabel("Intercept (GAM)", srt=0, col="orange", cex=cex.main)
+
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

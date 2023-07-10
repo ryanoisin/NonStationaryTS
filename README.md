@@ -6,7 +6,7 @@ Code archive to reproduce all analysis, simulations and figures in the paper Rya
 This repository includes the following files:
 
 - `analysis_figures.R`: Creates all figures and stored them in `/figures`. Where appropriate loads `.RDS` files from simulations created by other analysis files
-- `analysis_adfsim.R`: Code to simualte the performance of the DF test, saves results in `/files/simresults_adftest.RDS`
+- `analysis_adfsim.R`: Code to simulate the performance of the DF test, saves results in `/files/simresults_adftest.RDS`
 - `analysis_mldetrend.R`: Simulates the performance of different multilevel detrendign approaches, saves results in `/files/simres_mldetrend.RDS` 
 - `aux_functions.R`: Includes auxiliary functions for plotting, data generation and manipulation, and simulation studies
 - `adf_flow.R`: Function to perform DF testing based on sequential model testing
