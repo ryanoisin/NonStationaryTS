@@ -1,5 +1,5 @@
 # NonStationaryTS
-Code archive to reproduce all analysis, simulations and figures in the paper Ryan, O., Haslbeck, J.M.B \& Waldorp ,L. (preprint) "xxx"  (preprint: <https://psyarxiv.com/>).
+Code archive to reproduce all analysis, simulations and figures in the paper Ryan, O., Haslbeck, J. M. B. \& Waldorp ,L. J. (preprint) "Non-Stationarity in Time-Series Analysis: Modeling Stochastic and Deterministic Trends". [Preprint here](https://psyarxiv.com/z7ja2)
 
 # Overview
 
