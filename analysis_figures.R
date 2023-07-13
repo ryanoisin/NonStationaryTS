@@ -584,7 +584,9 @@ boxplot(estimates ~ method, data = estlong,
                   "Detrended Per Unit"),
         frame = FALSE,
         xlab = "Data Pre-Processing",
-        ylab = "Autoregressive Fixed Effect Estimate")
+        ylab = "Autoregressive Fixed Effect Estimate", 
+        cex.axis = 1.1, 
+        cex.lab = 1.1)
 abline(h = mphi, lty = 2, col = "gray")
 dev.off()
 
