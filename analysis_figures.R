@@ -195,6 +195,79 @@ title(xlab="Time", line=line.xlab)
 
 dev.off()
 
+# --------------------------------------------------------------------------- #
+# --------------------------------- Figure 2b -------------------------------- #
+# --------------------------------------------------------------------------- #
+# jonashaslbeck@protonmail.com
+
+# This is for Reviewer 3 who wanted to see the time-varying AR for all four cases
+
+# Function to get time-varying AR
+getTvAR <- function(X) {
+  m_lag <- cbind(X[-1], X[-N])
+  tv_cor <- sapply(3:(N-1), function(x) { 
+    cor(m_lag[1:x, ])[1,2]
+  })
+} # eoF
+
+
+# ------ 1) No Trend -----
+tvAR_X1 <- getTvAR(X1)
+
+# ------ 2) Stochastic Trend -----
+tvAR_X2 <- getTvAR(X2)
+
+# ------ 3) Deterministic Trend -----
+tvAR_X3 <- getTvAR(X3)
+
+
+sc <- 1.1
+pdf("figures/Figure2b_tvAR.pdf", width = 7*sc, height=2.7*sc)
+
+par(mfrow=c(1,3), mar=c(4,3.5,3,0.5))
+
+lwd.data <- 1.3
+alpha.data <-  0.75
+lwd.cm <- 2
+line.xlab <- 2.6
+line.main <- 1.5
+
+# ------ 1) No Trend -----
+plot.new()
+plot.window(xlim=c(1,N), ylim=c(-1,1))
+axis(1)
+axis(2, las=2)
+abline(h=seq(-1, 1, length=5), lty=2, col="grey")
+abline(h=seq(-1, 1, length=5), lty=2, col="grey")
+lines(tvAR_X1, col="tomato", lwd=lwd.cm)
+title("(a) Weak Stationarity Satisfied", font.main=1, line=line.main)
+title(xlab="Time", line=line.xlab)
+text(700, -.25, "Time-varying AR", col="tomato", cex=1.3)
+
+# ------ 2) Stochastic Trend -----
+plot.new()
+plot.window(xlim=c(1,N), ylim=c(-1,1))
+axis(1)
+axis(2, las=2)
+abline(h=seq(-1, 1, length=5), lty=2, col="grey")
+lines(tvAR_X2, col="tomato", lwd=lwd.cm)
+title("(b) Variance Depends on Time", font.main=1, line=line.main)
+title(xlab="Time", line=line.xlab)
+
+# ------ 3) Deterministic Trend -----
+plot.new()
+plot.window(xlim=c(1,N), ylim=c(-1,1))
+axis(1)
+axis(2, las=2)
+abline(h=seq(-1, 1, length=5), lty=2, col="grey")
+lines(tvAR_X3, col="tomato", lwd=lwd.cm)
+title("(c) Mean depends on Time", font.main=1, line=line.main)
+title(xlab="Time", line=line.xlab)
+
+dev.off()
+
+
+
 
 # --------------------------------------------------------------------------- #
 # --------------------------------- Figure 3 -------------------------------- #
