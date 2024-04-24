@@ -4,7 +4,7 @@
 library(RColorBrewer)
 library(scales)
 library(fpp3)
- # dependencies of fpp3
+# dependencies of fpp3
 library(tidyr); library(dplyr); library(tsibble)
 library(lubridate)
 
@@ -202,23 +202,34 @@ dev.off()
 
 # This is for Reviewer 3 who wanted to see the time-varying AR for all four cases
 
-# Function to get time-varying AR
-getTvAR <- function(X) {
+# Function to get time-varying COV
+getTvCOV <- function(X) {
   m_lag <- cbind(X[-1], X[-N])
   tv_cor <- sapply(3:(N-1), function(x) { 
-    cor(m_lag[1:x, ])[1,2]
+    cov(m_lag[1:x, ])[1,2]
   })
+  return(tv_cor)
+} # eoF
+# Function to get time-varying VAR
+getTvVAR <- function(X) {
+  tv_cor <- sapply(3:(N-1), function(x) { 
+    var(X[1:x])
+  })
+  return(as.numeric(tv_cor))
 } # eoF
 
 
 # ------ 1) No Trend -----
-tvAR_X1 <- getTvAR(X1)
+tvCOV_X1 <- getTvCOV(X1)
+tvVAR_X1 <- getTvVAR(X1)
 
 # ------ 2) Stochastic Trend -----
-tvAR_X2 <- getTvAR(X2)
+tvCOV_X2 <- getTvCOV(X2)
+tvVAR_X2 <- getTvVAR(X2)
 
 # ------ 3) Deterministic Trend -----
-tvAR_X3 <- getTvAR(X3)
+tvCOV_X3 <- getTvCOV(X3)
+tvVAR_X3 <- getTvVAR(X3)
 
 
 sc <- 1.1
@@ -234,35 +245,45 @@ line.main <- 1.5
 
 # ------ 1) No Trend -----
 plot.new()
-plot.window(xlim=c(1,N), ylim=c(-1,1))
+plot.window(xlim=c(1,N), ylim=c(-3,3))
 axis(1)
 axis(2, las=2)
-abline(h=seq(-1, 1, length=5), lty=2, col="grey")
-abline(h=seq(-1, 1, length=5), lty=2, col="grey")
-lines(tvAR_X1, col="tomato", lwd=lwd.cm)
+abline(h=seq(-3, 3, length=6), lty=2, col="grey")
+lines(X1, col="lightgrey")
+lines(tvVAR_X1, col="lightblue", lwd=lwd.cm)
+lines(tvCOV_X1, col="tomato", lwd=lwd.cm, lty=2)
 title("(a) Weak Stationarity Satisfied", font.main=1, line=line.main)
 title(xlab="Time", line=line.xlab)
-text(700, -.25, "Time-varying AR", col="tomato", cex=1.3)
+# text(700, -1.8, "Time-varying Var", col="lightblue", cex=1.3)
+# text(700, -2.5, "Time-varying Cov", col="tomato", cex=1.3)
 
 # ------ 2) Stochastic Trend -----
 plot.new()
-plot.window(xlim=c(1,N), ylim=c(-1,1))
+plot.window(xlim=c(1,N), ylim=c(-1,300))
 axis(1)
 axis(2, las=2)
-abline(h=seq(-1, 1, length=5), lty=2, col="grey")
-lines(tvAR_X2, col="tomato", lwd=lwd.cm)
+abline(h=seq(-1, 300, length=6), lty=2, col="grey")
+lines(X2, col="lightgrey")
+lines(tvVAR_X2, col="lightblue", lwd=lwd.cm)
+lines(tvCOV_X2, col="tomato", lwd=lwd.cm, lty=2)
 title("(b) Variance Depends on Time", font.main=1, line=line.main)
 title(xlab="Time", line=line.xlab)
 
 # ------ 3) Deterministic Trend -----
 plot.new()
-plot.window(xlim=c(1,N), ylim=c(-1,1))
+plot.window(xlim=c(1,N), ylim=c(-1,40))
 axis(1)
 axis(2, las=2)
-abline(h=seq(-1, 1, length=5), lty=2, col="grey")
-lines(tvAR_X3, col="tomato", lwd=lwd.cm)
+abline(h=seq(-1, 40, length=6), lty=2, col="grey")
+lines(X3, col="lightgrey")
+lines(tvVAR_X3, col="lightblue", lwd=lwd.cm)
+lines(tvCOV_X3, col="tomato", lwd=lwd.cm, lty=2)
 title("(c) Mean depends on Time", font.main=1, line=line.main)
 title(xlab="Time", line=line.xlab)
+
+legend("topleft", border=FALSE, bty="n", 
+       legend=c("Data", "Time-varying Var", "Time-varying Cov"), 
+       text.col=c("lightgrey", "lightblue", "tomato"), cex=1.25)
 
 dev.off()
 
@@ -796,14 +817,212 @@ plotLabel("Intercept (GAM)", srt=0, col="orange", cex=cex.main)
 dev.off()
 
 
+# --------------------------------------------------------------------------- #
+# --------------------------------- Appendix -------------------------------- #
+# --------------------------------------------------------------------------- #
+
+# Sensitivity Analyses; changing noise sd low and high
+
+# load simulation results (analysis_adfsim.R)
+simres <- readRDS("files/simresults_adftest_lowvar.RDS")
+tpoints_vec <- as.numeric(rownames(simres[[1]]))
+cols <- brewer.pal(5, "Dark2")
+
+sc <- 4.25
+
+# Create main panels
+pdf("figures/FigureXX_URsim_lowvar.pdf", height = (1.1)*sc, width = 2*sc)
+
+lmat <- rbind(c(1,2), c(3,3))
+lo <- layout(mat = lmat, heights = c(1, .2), widths = c(1,1))
+
+lwd.data <- 1.8
+
+# Data
+par(mar=c(4, 4.2, 3, 2))
+plot.new()
+plot.window(xlim = c(0,500), ylim = c(0,1))
+axis(1); axis(2, las = 2)
+title(expression(paste("(a) ADF Model Known, ",sigma, " = ", .25)), font.main = 1, line=1.5)
+title(xlab = "# Time Points", line = 2.5)
+title(ylab = "Proportion Correct", line = 2.5)
+for(i in 1:5){
+  if(i == 4) jit <- 5; if(i == 5) jit <- -5 else jit <- 0
+  lines(x = tpoints_vec +jit, y = simres[[i]][,1], col = alpha(cols[i],.75), type = "l", pch = 21, lwd = lwd.data)
+  # points(x = tpoints_vec + jit, y = simres[[i]][,1], bg = alpha(cols[i],.75), pch = 21, cex = 1.5)
+}
+abline(h = .95, col = "grey", lty = 2)
+
+# 2nd panel; with model selection
+plot.new()
+plot.window(xlim = c(0,500), ylim = c(0,1))
+axis(1); axis(2, las = 2)
+title(expression(paste("(b) ADF Model Selection, ",sigma, " = ", .25)),
+      font.main = 1, line=1.5)
+title(xlab = "# Time Points", line = 2.5)
+title(ylab = "Proportion Correct", line = 2.5)
+for(i in 1:5){
+  lines(x = tpoints_vec, y = simres[[i]][,2], col = alpha(cols[i],.75), type = "l", pch = 21, lwd = lwd.data)
+  # points(x = tpoints_vec, y = simres[[i]][,2], bg = alpha(cols[i],.75), pch = 21, cex = 1.5)
+}
+abline(h = .95, col = "grey", lty = 2)
+
+# Legend
+par(mar=c(0, 4, 0, 2))
+plot.new()
+legend("center", xpd = "n", bty = "n",
+       legend = c("Stationary\nAR(1)",
+                  "Deterministic\nLinear Trend",
+                  "Random Walk",
+                  "Random Walk\nWith Drift",
+                  "Random Walk\nLinear Trend"),
+       pt.bg = cols, ncol = 5, lwd = lwd.data, col = cols, border = "black",
+       # pch = 21,
+       lty = 1,
+       text.width = .17)
+
+dev.off()
+
+# ------- high variance condition --------
+# load simulation results (analysis_adfsim.R)
+simres <- readRDS("files/simresults_adftest_hivar.RDS")
+tpoints_vec <- as.numeric(rownames(simres[[1]]))
+cols <- brewer.pal(5, "Dark2")
+
+sc <- 4.25
+
+# Create main panels
+pdf("figures/FigureXX_URsim_highvar.pdf", height = (1.1)*sc, width = 2*sc)
+
+lmat <- rbind(c(1,2), c(3,3))
+lo <- layout(mat = lmat, heights = c(1, .2), widths = c(1,1))
+
+lwd.data <- 1.8
+
+# Data
+par(mar=c(4, 4.2, 3, 2))
+plot.new()
+plot.window(xlim = c(0,500), ylim = c(0,1))
+axis(1); axis(2, las = 2)
+title(expression(paste("(c) ADF Model Known, ",sigma, " = ", .75)), font.main = 1, line=1.5)
+title(xlab = "# Time Points", line = 2.5)
+title(ylab = "Proportion Correct", line = 2.5)
+for(i in 1:5){
+  if(i == 4) jit <- 5; if(i == 5) jit <- -5 else jit <- 0
+  lines(x = tpoints_vec +jit, y = simres[[i]][,1], col = alpha(cols[i],.75), type = "l", pch = 21, lwd = lwd.data)
+  # points(x = tpoints_vec + jit, y = simres[[i]][,1], bg = alpha(cols[i],.75), pch = 21, cex = 1.5)
+}
+abline(h = .95, col = "grey", lty = 2)
+
+# 2nd panel; with model selection
+plot.new()
+plot.window(xlim = c(0,500), ylim = c(0,1))
+axis(1); axis(2, las = 2)
+title(expression(paste("(d) ADF Model Selection, ",sigma, " = ", .75)),
+      font.main = 1, line=1.5)
+title(xlab = "# Time Points", line = 2.5)
+title(ylab = "Proportion Correct", line = 2.5)
+for(i in 1:5){
+  lines(x = tpoints_vec, y = simres[[i]][,2], col = alpha(cols[i],.75), type = "l", pch = 21, lwd = lwd.data)
+  # points(x = tpoints_vec, y = simres[[i]][,2], bg = alpha(cols[i],.75), pch = 21, cex = 1.5)
+}
+abline(h = .95, col = "grey", lty = 2)
+
+# Legend
+par(mar=c(0, 4, 0, 2))
+plot.new()
+legend("center", xpd = "n", bty = "n",
+       legend = c("Stationary\nAR(1)",
+                  "Deterministic\nLinear Trend",
+                  "Random Walk",
+                  "Random Walk\nWith Drift",
+                  "Random Walk\nLinear Trend"),
+       pt.bg = cols, ncol = 5, lwd = lwd.data, col = cols, border = "black",
+       # pch = 21,
+       lty = 1,
+       text.width = .17)
+
+dev.off()
 
 
+# --------------------------------- Varying Phi -------------------------------- #
 
 
+# load simulation results (analysis_adfsim.R)
+simres_phi <- readRDS("files/simresults_adftest_phi.RDS")
+simres_orig <- readRDS("files/simresults_adftest.RDS")
+simres_phi$stat_midp <- simres_orig[[1]]
+simres_phi$stat_trend_midp <- simres_orig[[2]]
+tpoints_vec <- as.numeric(rownames(simres_phi[[1]]))
+cols <- brewer.pal(5, "Dark2")
 
+sc <- 4.25
 
+# Create main panels
+pdf("figures/FigureXX_URsim_phivary.pdf", height = (1.1)*sc, width = 2*sc)
 
+lmat <- rbind(c(1,2), c(3,3))
+lo <- layout(mat = lmat, heights = c(1, .2), widths = c(1,1))
 
+lwd.data <- 1.8
+
+# Data
+par(mar=c(4, 4.2, 3, 2))
+plot.new()
+plot.window(xlim = c(0,500), ylim = c(0,1))
+axis(1); axis(2, las = 2)
+title("(a) ADF Model Known", font.main = 1, line=1.5)
+title(xlab = "# Time Points", line = 2.5)
+title(ylab = "Proportion Correct", line = 2.5)
+for(i in 1:6){
+  if(i %in% c(1,3,5)) col = alpha(cols[1],.75) else col = alpha(cols[2], .75)
+  if(i %in% c(1,2)) lty = 5
+  if(i %in% c(3,4)) lty = 4
+  if(i %in% c(5,6)) lty = 1
+  # if(i == 4) jit <- 5; if(i == 5) jit <- -5 else jit <- 0
+  lines(x = tpoints_vec +jit, y = simres_phi[[i]][,1], col = col, type = "l", pch = 21, 
+        lty = lty,
+        lwd = lwd.data)
+  # points(x = tpoints_vec + jit, y = simres[[i]][,1], bg = alpha(cols[i],.75), pch = 21, cex = 1.5)
+}
+abline(h = .95, col = "grey", lty = 2)
+
+# 2nd panel; with model selection
+plot.new()
+plot.window(xlim = c(0,500), ylim = c(0,1))
+axis(1); axis(2, las = 2)
+title("(b) ADF Model Selection", font.main = 1, line=1.5)
+title(xlab = "# Time Points", line = 2.5)
+title(ylab = "Proportion Correct", line = 2.5)
+for(i in 1:6){
+  if(i %in% c(1,3,5)) col = alpha(cols[1],.75) else col = alpha(cols[2], .75)
+  if(i %in% c(1,2)) lty = 5
+  if(i %in% c(3,4)) lty = 4
+  if(i %in% c(5,6)) lty = 1
+  # if(i == 4) jit <- 5; if(i == 5) jit <- -5 else jit <- 0
+  lines(x = tpoints_vec +jit, y = simres_phi[[i]][,2], col = col, type = "l", pch = 21, 
+        lty = lty,
+        lwd = lwd.data)
+  # points(x = tpoints_vec + jit, y = simres[[i]][,1], bg = alpha(cols[i],.75), pch = 21, cex = 1.5)
+}
+abline(h = .95, col = "grey", lty = 2)
+
+# Legend
+par(mar=c(0, 4, 0, 2))
+plot.new()
+legend("center", xpd = "n", bty = "n",
+       legend = c("Stationary\nAR(1)",
+                  "Deterministic\nLinear Trend",
+                  expression(paste(phi, " = ", .5)),
+                  expression(paste(phi, " = ", .25)),
+                  expression(paste(phi, " = ", .75))),
+       pt.bg = cols, ncol = 5, lwd = lwd.data, col = c(cols[1],cols[2],"grey","grey","grey"), 
+       border = "black",
+       # pch = 21,
+       lty = c(1,1,1,5,4),
+       text.width = .17)
+
+dev.off()
 
 
 
